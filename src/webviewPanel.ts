@@ -29,9 +29,24 @@ export class ShellCommandsPanel implements vscode.WebviewViewProvider {
         view.webview.options = { enableScripts: true };
         view.webview.html = this.html(view.webview);
         view.webview.onDidReceiveMessage(message => void this.handle(message));
+        // A retained (hidden) webview never reloads, so 'ready' won't fire
+        // again when the view is re-shown — flush on visibility instead.
+        view.onDidChangeVisibility(() => {
+            if (view.visible) {
+                this.flushPendingForm();
+            }
+        });
         // NOTE: no push() here — messages posted before the webview script
         // loads are silently dropped. The webview announces itself with
         // 'ready' and we (re)send state + any pending form then.
+    }
+
+    /** Delivers a stashed form request; cleared by the webview's 'formShown' ack. */
+    private flushPendingForm(): void {
+        if (!this.pendingForm) {
+            return;
+        }
+        void this.view?.webview.postMessage({ type: 'beginForm', ...this.pendingForm });
     }
 
     /** Opens the add/edit form; focuses the panel first if it is not open yet. */
@@ -65,10 +80,7 @@ export class ShellCommandsPanel implements vscode.WebviewViewProvider {
                 // Webview script is up — now state (and a pending form, if
                 // any) will actually be received.
                 this.push();
-                if (this.pendingForm) {
-                    const pending = this.pendingForm;
-                    void this.view?.webview.postMessage({ type: 'beginForm', ...pending });
-                }
+                this.flushPendingForm();
                 break;
             case 'formShown':
                 this.pendingForm = undefined;

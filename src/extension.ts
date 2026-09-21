@@ -34,21 +34,29 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     const pickAndRun = vscode.commands.registerCommand('openShell.pickAndRun', async () => {
         const commands = config.getEnabledCommands();
-        if (commands.length === 0) {
-            // The top-right launcher is always visible; with nothing to run,
-            // route the click straight into maintenance instead of a dead end.
-            panel.requestForm();
-            return;
-        }
-        const picked = await vscode.window.showQuickPick(
-            commands.map(c => ({
+        // The launcher menu must be self-sufficient: adding a command can
+        // never depend on the (possibly hidden) panel being in a good state.
+        type Pick = vscode.QuickPickItem & { config?: ShellCommandConfig; add?: boolean; manage?: boolean };
+        const picks: Pick[] = [
+            { label: '$(add) Add New Command…', add: true, alwaysShow: true },
+            ...commands.map(c => ({
                 label: `${c.icon && c.icon.trim() ? `${c.icon.trim()} ` : '$(play) '}${c.title}`,
                 description: c.command.length > 60 ? `${c.command.slice(0, 57)}...` : c.command,
                 config: c,
             })),
-            { placeHolder: 'Run a shell command...' },
-        );
-        if (picked) {
+            { label: '$(gear) Manage Commands…', manage: true, alwaysShow: true },
+        ];
+        const picked = await vscode.window.showQuickPick(picks, {
+            placeHolder: commands.length > 0 ? 'Run a shell command...' : 'Add your first shell command…',
+        });
+        if (!picked) {
+            return;
+        }
+        if (picked.add) {
+            panel.requestForm();
+        } else if (picked.manage) {
+            void vscode.commands.executeCommand('openShellCommands.focus');
+        } else if (picked.config) {
             executor.execute(picked.config);
         }
     });
@@ -166,23 +174,27 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     statusBar.render();
 
     // First-run guidance: the Secondary Side Bar icon can be hidden, so point
-    // users at the always-visible status-bar gear button first.
+    // users at the always-visible status-bar gear button first. Fire-and-
+    // forget — activation must never wait on UI (it deadlocks headless hosts).
     if (!context.globalState.get<boolean>(INTRO_KEY)) {
-        await context.globalState.update(INTRO_KEY, true);
-        const pick = await vscode.window.showInformationMessage(
-            'Open Shell Toolbar installed. Maintain commands in the manager panel (⚙ bottom-right) and run them from the ▶ button at the top-right of the editor.',
-            'Open Manager',
-            'Add Command',
-            'Show Guide');
-        if (pick === 'Open Manager') {
-            void vscode.commands.executeCommand('openShellCommands.focus');
-        } else if (pick === 'Add Command') {
-            void vscode.commands.executeCommand('openShell.addCommand');
-        } else if (pick === 'Show Guide') {
-            void vscode.commands.executeCommand(
-                'workbench.action.openWalkthrough',
-                'neo-idea.open-shell-toolbar#openShell.gettingStarted');
-        }
+        void context.globalState.update(INTRO_KEY, true);
+        void vscode.window
+            .showInformationMessage(
+                'Open Shell Toolbar installed. Maintain commands in the manager panel (⚙ bottom-right) and run them from the ▶ button at the top-right of the editor.',
+                'Open Manager',
+                'Add Command',
+                'Show Guide')
+            .then(pick => {
+                if (pick === 'Open Manager') {
+                    void vscode.commands.executeCommand('openShellCommands.focus');
+                } else if (pick === 'Add Command') {
+                    void vscode.commands.executeCommand('openShell.addCommand');
+                } else if (pick === 'Show Guide') {
+                    void vscode.commands.executeCommand(
+                        'workbench.action.openWalkthrough',
+                        'neo-idea.open-shell-toolbar#openShell.gettingStarted');
+                }
+            });
     }
 }
 
