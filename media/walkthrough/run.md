@@ -1,9 +1,5 @@
-Enabled commands appear on the **status bar** (bottom-left area) as buttons:
+Open the manager: click the **⚙ gear at the bottom-right of the status bar**
+(or `⌘⇧P` → **Open Shell: Open Manager**).
 
-- **Hover** a button to preview the exact command
-- **Click** to run it — each command gets its own reused integrated terminal tab
-- Prefer one compact button? Switch to **popup mode** via the Command Palette →
-  **Open Shell: Set Display Mode** — a single `$(terminal) Commands` button
-  opens a quick-pick menu with everything
-
-Commands also run from the palette: **Open Shell: Run Command...**
+Each button on the status bar runs its command in the integrated terminal —
+one click, no typing. Buttons are ordered as configured in the manager.

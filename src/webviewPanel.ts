@@ -116,7 +116,7 @@ export class ShellCommandsPanel implements vscode.WebviewViewProvider {
 <meta http-equiv="Content-Security-Policy" content="${csp}">
 <style>
   body {
-    padding: 10px 12px 16px;
+    padding: 6px 0 16px;
     color: var(--vscode-sideBar-foreground, #ccc);
     font-family: var(--vscode-font-family);
     font-size: var(--vscode-font-size, 13px);
@@ -135,8 +135,8 @@ export class ShellCommandsPanel implements vscode.WebviewViewProvider {
     font-family: var(--vscode-font-family);
     font-size: var(--vscode-font-size, 13px);
   }
-  .toolbar { display: flex; gap: 6px; margin: 8px 0; }
-  .search { margin-bottom: 10px; }
+  .toolbar { display: flex; gap: 6px; margin: 8px 0 6px; }
+  .search { margin-bottom: 8px; }
   button {
     cursor: pointer;
     border: none;

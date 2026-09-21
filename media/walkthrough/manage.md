@@ -1,5 +1,7 @@
-The **Open Shell Toolbar** icon on the RIGHT edge of the window (Secondary
-Side Bar) opens the management panel:
+Open the manager: click the **⚙ gear at the bottom-right of the status bar**
+(or `⌘⇧P` → **Open Shell: Open Manager**). The manager also lives in the
+Secondary Side Bar — its icon shows on the RIGHT edge whenever that bar is
+open (`⌘⌥B` toggles it).
 
 - **Click** a command card → run it
 - Card buttons → **Run**, **Edit**, **Duplicate**, **Enable/Disable**, **Delete**

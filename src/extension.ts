@@ -17,6 +17,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const wizard = new CommandWizard(config);
     const panel = new ShellCommandsPanel(config, executor, wizard);
 
+    const openManager = vscode.commands.registerCommand('openShell.openManager', () =>
+        vscode.commands.executeCommand('openShellCommands.focus'));
+
     const runCommand = vscode.commands.registerCommand('openShell.runCommand', (cmd: ShellCommandConfig) => {
         if (cmd) {
             executor.execute(cmd);
@@ -148,21 +151,24 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     context.subscriptions.push(
         config, statusBar, panelRegistration,
         runCommand, pickAndRun, addCommand, editCommand, duplicateCommand,
-        deleteCommand, toggleEnabled, setDisplayMode,
+        deleteCommand, toggleEnabled, setDisplayMode, openManager,
         importConfig, exportConfig,
     );
 
     statusBar.render();
 
-    // First-run guidance: the extension has no visible UI until a command
-    // exists, so tell the user exactly where to start.
+    // First-run guidance: the Secondary Side Bar icon can be hidden, so point
+    // users at the always-visible status-bar gear button first.
     if (!context.globalState.get<boolean>(INTRO_KEY)) {
         await context.globalState.update(INTRO_KEY, true);
         const pick = await vscode.window.showInformationMessage(
-            'Open Shell Toolbar: pin shell commands to the status bar for one-click runs.',
+            'Open Shell Toolbar installed. Click the ⚙ gear at the bottom-right of the status bar to manage commands.',
+            'Open Manager',
             'Add Command',
             'Show Guide');
-        if (pick === 'Add Command') {
+        if (pick === 'Open Manager') {
+            void vscode.commands.executeCommand('openShellCommands.focus');
+        } else if (pick === 'Add Command') {
             void vscode.commands.executeCommand('openShell.addCommand');
         } else if (pick === 'Show Guide') {
             void vscode.commands.executeCommand(

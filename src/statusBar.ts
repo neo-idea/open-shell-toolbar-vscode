@@ -20,6 +20,16 @@ export class StatusBarManager implements vscode.Disposable {
         }
         this.items = [];
 
+        // Always-visible manager entry: the Secondary Side Bar can be
+        // collapsed (hiding its icon strip), but the status bar never lies.
+        const manager = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 10);
+        manager.name = 'Open Shell Toolbar Manager';
+        manager.text = '$(gear)';
+        manager.tooltip = 'Open Shell Toolbar — open the manager panel';
+        manager.command = 'openShellCommands.focus';
+        manager.show();
+        this.items.push(manager);
+
         const commands = this.config.getEnabledCommands();
         if (this.config.getDisplayMode() === 'popup' || commands.length === 0) {
             const item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 1000);
