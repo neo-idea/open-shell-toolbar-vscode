@@ -26,7 +26,7 @@ export class StatusBarManager implements vscode.Disposable {
         manager.name = 'Open Shell Toolbar Manager';
         manager.text = '$(gear)';
         manager.tooltip = 'Open Shell Toolbar — open the manager panel';
-        manager.command = 'openShellCommands.focus';
+        manager.command = 'openShell.openManager';
         manager.show();
         this.items.push(manager);
 

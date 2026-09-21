@@ -49,7 +49,20 @@ export class ShellCommandsPanel implements vscode.WebviewViewProvider {
         void this.view?.webview.postMessage({ type: 'beginForm', ...this.pendingForm });
     }
 
-    /** Opens the add/edit form; focuses the panel first if it is not open yet. */
+    /**
+     * Reveals the manager panel. `view.show()` is the documented way to open
+     * the view AND its container — `<id>.focus` silently does nothing when
+     * the Secondary Side Bar was never opened in this window.
+     */
+    reveal(): void {
+        if (this.view) {
+            this.view.show(false);
+        } else {
+            void vscode.commands.executeCommand('openShellCommands.focus');
+        }
+    }
+
+    /** Opens the add/edit form; reveals the panel first if it is not open yet. */
     requestForm(command?: ShellCommandConfig): void {
         // Stash always: if the webview script is not loaded yet, a direct
         // postMessage would be lost — 'ready' flushes the stash instead.
@@ -57,7 +70,7 @@ export class ShellCommandsPanel implements vscode.WebviewViewProvider {
         if (this.view?.visible) {
             void this.view.webview.postMessage({ type: 'beginForm', command });
         } else {
-            void vscode.commands.executeCommand('openShellCommands.focus');
+            this.reveal();
         }
     }
 
@@ -288,18 +301,14 @@ export class ShellCommandsPanel implements vscode.WebviewViewProvider {
 <body>
 
   <div id="listView">
-    <header>
-      <h2>Shell Commands</h2>
-      <select id="mode" style="width:auto" title="Status bar display mode">
-        <option value="flat">Flat — button per command</option>
-        <option value="popup">Popup — single button</option>
-      </select>
-    </header>
-
     <div class="toolbar">
       <button id="add">+ Add Command</button>
       <button id="import" class="secondary grow" title="Import commands from JSON">Import</button>
       <button id="export" class="secondary grow" title="Export commands to JSON">Export</button>
+      <select id="mode" style="width:auto" title="Status bar display mode">
+        <option value="flat">Flat — button per command</option>
+        <option value="popup">Popup — single button</option>
+      </select>
     </div>
 
     <div class="search"><input id="search" type="text" placeholder="Search commands..."></div>

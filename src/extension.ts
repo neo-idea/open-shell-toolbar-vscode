@@ -24,7 +24,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     syncHasCommands();
 
     const openManager = vscode.commands.registerCommand('openShell.openManager', () =>
-        vscode.commands.executeCommand('openShellCommands.focus'));
+        panel.reveal());
 
     const runCommand = vscode.commands.registerCommand('openShell.runCommand', (cmd: ShellCommandConfig) => {
         if (cmd) {
@@ -55,7 +55,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         if (picked.add) {
             panel.requestForm();
         } else if (picked.manage) {
-            void vscode.commands.executeCommand('openShellCommands.focus');
+            panel.reveal();
         } else if (picked.config) {
             executor.execute(picked.config);
         }
@@ -186,7 +186,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                 'Show Guide')
             .then(pick => {
                 if (pick === 'Open Manager') {
-                    void vscode.commands.executeCommand('openShellCommands.focus');
+                    void vscode.commands.executeCommand('openShell.openManager');
                 } else if (pick === 'Add Command') {
                     void vscode.commands.executeCommand('openShell.addCommand');
                 } else if (pick === 'Show Guide') {
