@@ -1,25 +1,25 @@
 import * as vscode from 'vscode';
-import { ConfigService, DisplayMode, ShellCommandConfig } from './config';
+import { ConfigService, DisplayMode, ShellCommandConfig, createDefaultCommand } from './config';
 import { CommandExecutor } from './executor';
-import { CommandWizard } from './wizard';
 
 /**
- * Rich management panel (WebviewView) in the Secondary Side Bar — the VSCode
- * counterpart of the IntelliJ plugin's Tool Window. Renders command cards
- * with run/edit/duplicate/delete/enable actions, live search, display-mode
- * switching and JSON import/export. All state flows through ConfigService
- * events, so the panel, status bar and palette stay in sync.
+ * Manager panel (WebviewView) in the Secondary Side Bar. Two views in one
+ * webview: the command-card list (run/edit/duplicate/enable/delete, live
+ * search, mode switch, import/export) and an add/edit FORM so all fields
+ * can be filled on one screen — no chains of input boxes. State flows
+ * through ConfigService events, so panel, status bar and palette stay in
+ * sync.
  */
 export class ShellCommandsPanel implements vscode.WebviewViewProvider {
 
     public static readonly viewId = 'openShellCommands';
 
     private view?: vscode.WebviewView;
+    private pendingForm?: { id?: string; command?: ShellCommandConfig };
 
     constructor(
         private readonly config: ConfigService,
         private readonly executor: CommandExecutor,
-        private readonly wizard: CommandWizard,
     ) {
         config.onDidChange(() => this.push());
     }
@@ -30,6 +30,21 @@ export class ShellCommandsPanel implements vscode.WebviewViewProvider {
         view.webview.html = this.html(view.webview);
         view.webview.onDidReceiveMessage(message => void this.handle(message));
         this.push();
+        if (this.pendingForm) {
+            const pending = this.pendingForm;
+            this.pendingForm = undefined;
+            void view.webview.postMessage({ type: 'beginForm', ...pending });
+        }
+    }
+
+    /** Opens the add/edit form; focuses the panel first if it is not open yet. */
+    requestForm(command?: ShellCommandConfig): void {
+        if (this.view?.visible) {
+            void this.view.webview.postMessage({ type: 'beginForm', command });
+        } else {
+            this.pendingForm = command ? { id: command.id, command } : {};
+            void vscode.commands.executeCommand('openShellCommands.focus');
+        }
     }
 
     /** Sends the latest commands + display mode to the webview. */
@@ -48,7 +63,7 @@ export class ShellCommandsPanel implements vscode.WebviewViewProvider {
     private async handle(message: PanelMessage): Promise<void> {
         switch (message.type) {
             case 'add':
-                await this.wizard.add();
+                this.requestForm();
                 break;
             case 'run': {
                 const cmd = this.find(message.id);
@@ -60,7 +75,7 @@ export class ShellCommandsPanel implements vscode.WebviewViewProvider {
             case 'edit': {
                 const cmd = this.find(message.id);
                 if (cmd) {
-                    await this.wizard.edit(cmd);
+                    this.requestForm(cmd);
                 }
                 break;
             }
@@ -85,6 +100,10 @@ export class ShellCommandsPanel implements vscode.WebviewViewProvider {
                 }
                 break;
             }
+            case 'save': {
+                await this.save(message.id, message.fields);
+                break;
+            }
             case 'setMode':
                 if (message.mode === 'flat' || message.mode === 'popup') {
                     await this.config.setDisplayMode(message.mode as DisplayMode);
@@ -97,6 +116,33 @@ export class ShellCommandsPanel implements vscode.WebviewViewProvider {
                 await vscode.commands.executeCommand('openShell.exportConfig');
                 break;
         }
+    }
+
+    private async save(id: string | undefined, fields: FormFields): Promise<void> {
+        // The webview validates too, but never trust remote input.
+        if (!fields.title.trim() || !fields.command.trim()) {
+            void this.view?.webview.postMessage({
+                type: 'formError',
+                message: 'Title and Command are required.',
+            });
+            return;
+        }
+        const config = createDefaultCommand({
+            title: fields.title.trim(),
+            command: fields.command.trim(),
+            workingDir: fields.workingDir.trim() || undefined,
+            icon: fields.icon.trim() || undefined,
+            openInTerminal: fields.openInTerminal,
+            enabled: fields.enabled,
+        });
+        if (id && this.find(id)) {
+            config.id = id;
+            await this.config.updateCommand(config);
+        } else {
+            config.id = this.config.newId();
+            await this.config.addCommand(config);
+        }
+        // onDidChange → push() → webview leaves the form.
     }
 
     // ── HTML ────────────────────────────────────────────────────────────
@@ -123,7 +169,7 @@ export class ShellCommandsPanel implements vscode.WebviewViewProvider {
   }
   header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
   header h2 { font-size: 13px; font-weight: 600; margin: 0; text-transform: uppercase; letter-spacing: .04em; opacity: .85; }
-  select, input[type="text"] {
+  select, input[type="text"], textarea {
     width: 100%;
     box-sizing: border-box;
     padding: 4px 6px;
@@ -135,6 +181,11 @@ export class ShellCommandsPanel implements vscode.WebviewViewProvider {
     font-family: var(--vscode-font-family);
     font-size: var(--vscode-font-size, 13px);
   }
+  textarea {
+    min-height: 64px; resize: vertical;
+    font-family: var(--vscode-editor-font-family, monospace);
+  }
+  input.invalid, textarea.invalid { border-color: var(--vscode-inputValidation-errorBorder, #be1100); }
   .toolbar { display: flex; gap: 6px; margin: 8px 0 6px; }
   .search { margin-bottom: 8px; }
   button {
@@ -184,53 +235,186 @@ export class ShellCommandsPanel implements vscode.WebviewViewProvider {
   }
   .badges { margin-top: 2px; font-size: 10px; opacity: .8; }
   .actions { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; justify-content: flex-end; }
-  .switch { display: flex; align-items: center; gap: 4px; font-size: 11px; opacity: .8; cursor: pointer; }
-  .empty {
-    text-align: center; padding: 40px 10px; opacity: .8;
-  }
+  .empty { text-align: center; padding: 40px 10px; opacity: .8; }
   .empty .big { font-size: 30px; margin-bottom: 8px; }
   .hint { margin-top: 12px; font-size: 11px; opacity: .6; text-align: center; }
+
+  /* ── form view ── */
+  .field { margin-bottom: 10px; }
+  .field label { display: block; font-size: 11px; opacity: .85; margin-bottom: 3px; }
+  .field .note { font-size: 10px; opacity: .6; margin-top: 3px; }
+  .icon-row { display: flex; gap: 6px; align-items: center; }
+  .icon-row input { flex: 1; }
+  .icon-preview {
+    flex: 0 0 26px; height: 26px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+    border-radius: 4px;
+    background: var(--vscode-badge-background, rgba(128,128,128,.25));
+  }
+  .checks { display: flex; gap: 16px; margin: 12px 0; }
+  .checks label { display: flex; gap: 5px; align-items: center; cursor: pointer; }
+  .form-actions { display: flex; gap: 6px; margin-top: 14px; }
+  .form-error {
+    margin-top: 8px; padding: 6px 8px; border-radius: 3px; font-size: 11px;
+    background: var(--vscode-inputValidation-errorBackground, rgba(190,17,0,.15));
+    border: 1px solid var(--vscode-inputValidation-errorBorder, #be1100);
+  }
 </style>
 </head>
 <body>
-  <header>
-    <h2>Shell Commands</h2>
-    <select id="mode" style="width:auto" title="Status bar display mode">
-      <option value="flat">Flat — button per command</option>
-      <option value="popup">Popup — single button</option>
-    </select>
-  </header>
 
-  <div class="toolbar">
-    <button id="add">+ Add Command</button>
-    <button id="import" class="secondary grow" title="Import commands from JSON">Import</button>
-    <button id="export" class="secondary grow" title="Export commands to JSON">Export</button>
+  <div id="listView">
+    <header>
+      <h2>Shell Commands</h2>
+      <select id="mode" style="width:auto" title="Status bar display mode">
+        <option value="flat">Flat — button per command</option>
+        <option value="popup">Popup — single button</option>
+      </select>
+    </header>
+
+    <div class="toolbar">
+      <button id="add">+ Add Command</button>
+      <button id="import" class="secondary grow" title="Import commands from JSON">Import</button>
+      <button id="export" class="secondary grow" title="Export commands to JSON">Export</button>
+    </div>
+
+    <div class="search"><input id="search" type="text" placeholder="Search commands..."></div>
+
+    <div id="list"></div>
+
+    <div class="hint">Click a card to run — it executes in the integrated terminal.</div>
   </div>
 
-  <div class="search"><input id="search" type="text" placeholder="Search commands..."></div>
+  <div id="formView" style="display:none">
+    <header><h2 id="formTitle">Add Command</h2></header>
 
-  <div id="list"></div>
+    <div class="field">
+      <label for="f-title">Title</label>
+      <input id="f-title" type="text" placeholder="Dev Server">
+    </div>
 
-  <div class="hint">Click a card's ▶ to run — it executes in the integrated terminal.</div>
+    <div class="field">
+      <label for="f-command">Command</label>
+      <textarea id="f-command" placeholder="pnpm dev"></textarea>
+      <div class="note">Multi-line is fine. ⌘/Ctrl+Enter saves.</div>
+    </div>
 
-<script nonce="${nonce}">
+    <div class="field">
+      <label for="f-dir">Working directory <span style="opacity:.6">(optional, defaults to workspace)</span></label>
+      <input id="f-dir" type="text" placeholder="\${workspaceFolder}">
+    </div>
+
+    <div class="field">
+      <label for="f-icon">Icon <span style="opacity:.6">(emoji 🚀 or codicon $(terminal))</span></label>
+      <div class="icon-row">
+        <input id="f-icon" type="text" placeholder="🚀">
+        <div class="icon-preview" id="iconPreview">▶</div>
+      </div>
+    </div>
+
+    <div class="checks">
+      <label><input id="f-terminal" type="checkbox" checked> Run in terminal</label>
+      <label><input id="f-enabled" type="checkbox" checked> Enabled</label>
+    </div>
+
+    <div class="form-actions">
+      <button id="save">Save</button>
+      <button id="cancel" class="secondary">Cancel</button>
+    </div>
+
+    <div id="formError" class="form-error" style="display:none"></div>
+  </div>
+
+<script nonce="\${nonce}">
   const vscode = acquireVsCodeApi();
   let state = { commands: [], mode: 'flat' };
+  let view = 'list';          // 'list' | 'form'
+  let editingId = null;       // null = adding
+  let pendingSave = false;
 
   window.addEventListener('message', (e) => {
-    if (e.data && e.data.type === 'state') {
-      state = e.data;
+    const d = e.data;
+    if (!d) { return; }
+    if (d.type === 'beginForm') {
+      editingId = (d.command && d.command.id) || null;
+      document.getElementById('formTitle').textContent = editingId ? 'Edit Command' : 'Add Command';
+      document.getElementById('f-title').value = d.command ? (d.command.title || '') : '';
+      document.getElementById('f-command').value = d.command ? (d.command.command || '') : '';
+      document.getElementById('f-dir').value = d.command ? (d.command.workingDir || '') : '';
+      document.getElementById('f-icon').value = d.command ? (d.command.icon || '') : '';
+      document.getElementById('f-terminal').checked = d.command ? !!d.command.openInTerminal : true;
+      document.getElementById('f-enabled').checked = d.command ? !!d.command.enabled : true;
+      showFormError('');
+      view = 'form';
+      render();
+      document.getElementById('f-title').focus();
+    } else if (d.type === 'formError') {
+      pendingSave = false;
+      showFormError(d.message);
+    } else if (d.type === 'state') {
+      state = d;
+      if (pendingSave) { pendingSave = false; view = 'list'; }
       render();
     }
   });
 
+  function render() {
+    document.getElementById('listView').style.display = view === 'list' ? '' : 'none';
+    document.getElementById('formView').style.display = view === 'form' ? '' : 'none';
+    if (view === 'list') { renderList(); }
+  }
+
+  // ── form ──
+  function showFormError(text) {
+    const el = document.getElementById('formError');
+    el.textContent = text;
+    el.style.display = text ? '' : 'none';
+  }
+  function mark(input, bad) { input.classList.toggle('invalid', bad); return bad; }
+  function submitForm() {
+    const title = document.getElementById('f-title');
+    const command = document.getElementById('f-command');
+    let bad = false;
+    bad = mark(title, !title.value.trim()) || bad;
+    bad = mark(command, !command.value.trim()) || bad;
+    if (bad) { showFormError('Title and Command are required.'); return; }
+    vscode.postMessage({
+      type: 'save',
+      id: editingId || undefined,
+      fields: {
+        title: title.value,
+        command: command.value,
+        workingDir: document.getElementById('f-dir').value,
+        icon: document.getElementById('f-icon').value,
+        openInTerminal: document.getElementById('f-terminal').checked,
+        enabled: document.getElementById('f-enabled').checked,
+      },
+    });
+    pendingSave = true;
+    showFormError('');
+  }
+  document.getElementById('save').addEventListener('click', submitForm);
+  document.getElementById('cancel').addEventListener('click', () => { view = 'list'; render(); });
+  document.getElementById('f-title').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); document.getElementById('f-command').focus(); }
+  });
+  document.getElementById('f-command').addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); submitForm(); }
+  });
+  document.getElementById('f-icon').addEventListener('input', (e) => {
+    const v = e.target.value.trim();
+    document.getElementById('iconPreview').textContent = (!v || v.startsWith('$(')) ? '▶' : v;
+  });
+
+  // ── list ──
   document.getElementById('mode').addEventListener('change', (e) => {
     vscode.postMessage({ type: 'setMode', mode: e.target.value });
   });
   document.getElementById('add').addEventListener('click', () => vscode.postMessage({ type: 'add' }));
   document.getElementById('import').addEventListener('click', () => vscode.postMessage({ type: 'import' }));
   document.getElementById('export').addEventListener('click', () => vscode.postMessage({ type: 'export' }));
-  document.getElementById('search').addEventListener('input', render);
+  document.getElementById('search').addEventListener('input', () => { if (view === 'list') { renderList(); } });
 
   // Event delegation: no inline onclick — ids from imported JSON are
   // attacker-controlled, so they must never be interpolated into handlers.
@@ -254,12 +438,11 @@ export class ShellCommandsPanel implements vscode.WebviewViewProvider {
   }
 
   function iconText(raw) {
-    if (!raw) { return '&#9654;'; }
-    if (raw.startsWith('$(')) { return '&#9654;'; }
+    if (!raw || raw.startsWith('$(')) { return '&#9654;'; }
     return escapeHtml(raw);
   }
 
-  function render() {
+  function renderList() {
     const list = document.getElementById('list');
     document.getElementById('mode').value = state.mode;
     const q = document.getElementById('search').value.trim().toLowerCase();
@@ -302,9 +485,19 @@ export class ShellCommandsPanel implements vscode.WebviewViewProvider {
     }
 }
 
+interface FormFields {
+    title: string;
+    command: string;
+    workingDir: string;
+    icon: string;
+    openInTerminal: boolean;
+    enabled: boolean;
+}
+
 type PanelMessage =
     | { type: 'add' }
     | { type: 'run' | 'edit' | 'duplicate' | 'delete' | 'toggle'; id: string }
+    | { type: 'save'; id?: string; fields: FormFields }
     | { type: 'setMode'; mode: string }
     | { type: 'import' }
     | { type: 'export' };

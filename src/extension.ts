@@ -5,7 +5,6 @@ import * as path from 'path';
 import { ConfigService, DisplayMode, ShellCommandConfig, createDefaultCommand } from './config';
 import { CommandExecutor } from './executor';
 import { StatusBarManager } from './statusBar';
-import { CommandWizard } from './wizard';
 import { ShellCommandsPanel } from './webviewPanel';
 
 const INTRO_KEY = 'openShellToolbar.introShown';
@@ -14,8 +13,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const config = new ConfigService(context);
     const executor = new CommandExecutor();
     const statusBar = new StatusBarManager(config);
-    const wizard = new CommandWizard(config);
-    const panel = new ShellCommandsPanel(config, executor, wizard);
+    const panel = new ShellCommandsPanel(config, executor);
+
+    // Drive the editor-toolbar button's visibility ("when" context).
+    const syncHasCommands = () =>
+        void vscode.commands.executeCommand(
+            'setContext', 'openShellToolbar.hasCommands', config.getCommands().length > 0);
+    config.onDidChange(syncHasCommands);
+    syncHasCommands();
 
     const openManager = vscode.commands.registerCommand('openShell.openManager', () =>
         vscode.commands.executeCommand('openShellCommands.focus'));
@@ -45,11 +50,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         }
     });
 
-    const addCommand = vscode.commands.registerCommand('openShell.addCommand', () => wizard.add());
+    const addCommand = vscode.commands.registerCommand('openShell.addCommand', () => panel.requestForm());
 
     const editCommand = vscode.commands.registerCommand('openShell.editCommand', (cmd: ShellCommandConfig) => {
         if (cmd) {
-            void wizard.edit(cmd);
+            void panel.requestForm(cmd);
         }
     });
 

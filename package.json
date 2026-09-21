@@ -2,7 +2,7 @@
   "name": "open-shell-toolbar",
   "displayName": "Open Shell Toolbar",
   "description": "Pin your frequently-used shell commands as status bar buttons (or a quick-pick popup) and run them in the integrated terminal with one click.",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "publisher": "neo-idea",
   "license": "MIT",
   "repository": {
@@ -113,7 +113,7 @@
       {
         "command": "openShell.pickAndRun",
         "title": "Run Command...",
-        "icon": "$(terminal)"
+        "icon": "$(terminal-play)"
       },
       {
         "command": "openShell.setDisplayMode",
@@ -144,6 +144,15 @@
           "type": "webview",
           "name": "Shell Commands",
           "contextualTitle": "Open Shell Toolbar"
+        }
+      ]
+    },
+    "menus": {
+      "editor/title": [
+        {
+          "command": "openShell.pickAndRun",
+          "group": "navigation",
+          "when": "openShellToolbar.hasCommands"
         }
       ]
     }
