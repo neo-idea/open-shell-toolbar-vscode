@@ -5,8 +5,8 @@ import * as path from 'path';
 import { ConfigService, DisplayMode, ShellCommandConfig, createDefaultCommand } from './config';
 import { CommandExecutor } from './executor';
 import { StatusBarManager } from './statusBar';
-import { ShellCommandsTreeProvider } from './tree';
 import { CommandWizard } from './wizard';
+import { ShellCommandsPanel } from './webviewPanel';
 
 const INTRO_KEY = 'openShellToolbar.introShown';
 
@@ -14,8 +14,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const config = new ConfigService(context);
     const executor = new CommandExecutor();
     const statusBar = new StatusBarManager(config);
-    const tree = new ShellCommandsTreeProvider(config);
     const wizard = new CommandWizard(config);
+    const panel = new ShellCommandsPanel(config, executor, wizard);
 
     const runCommand = vscode.commands.registerCommand('openShell.runCommand', (cmd: ShellCommandConfig) => {
         if (cmd) {
@@ -90,8 +90,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         }
     });
 
-    const refreshTree = vscode.commands.registerCommand('openShell.refreshTree', () => tree.refresh());
-
     const importConfig = vscode.commands.registerCommand('openShell.importConfig', async () => {
         const uris = await vscode.window.showOpenDialog({
             canSelectMany: false,
@@ -142,15 +140,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         vscode.window.showInformationMessage(`Open Shell: exported ${commands.length} command(s).`);
     });
 
-    const treeView = vscode.window.createTreeView('openShellCommands', {
-        treeDataProvider: tree,
-        showCollapseAll: false,
-    });
+    const panelRegistration = vscode.window.registerWebviewViewProvider(
+        ShellCommandsPanel.viewId, panel, { webviewOptions: { retainContextWhenHidden: true } });
 
     context.subscriptions.push(
-        config, statusBar, treeView,
+        config, statusBar, panelRegistration,
         runCommand, pickAndRun, addCommand, editCommand, duplicateCommand,
-        deleteCommand, toggleEnabled, setDisplayMode, refreshTree,
+        deleteCommand, toggleEnabled, setDisplayMode,
         importConfig, exportConfig,
     );
 

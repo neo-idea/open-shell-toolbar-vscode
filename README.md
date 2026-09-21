@@ -29,6 +29,9 @@ configuration.
 - **Icons** — emoji (🚀) or built-in
   [codicon](https://microsoft.github.io/vscode-codicons/dist/codicon.html)
   ids like `$(play)`
+- **Management panel (right side)** — the Open Shell Toolbar icon on the right
+  edge opens a full manager: command cards, live search, run / edit /
+  duplicate / enable / delete, display-mode switch, JSON import/export
 - **Import / export** commands as JSON
 - **Live refresh** — every change applies immediately, no reload
 - **Persistent** — commands are stored globally and survive restarts
@@ -63,7 +66,7 @@ After installing (or run **Help → Welcome → Walkthroughs** for the built-in
 | Entry point | Where | What it does |
 |---|---|---|
 | **Status bar** | Bottom-left of the window | Flat mode: one button per command; popup mode: one `$(terminal) Commands` button. No commands yet → `Shell +` button adds one |
-| **Activity Bar** | Left edge, terminal icon → *Shell Commands* | Manage: run, edit, duplicate, disable, delete |
+| **Management panel** | Right side — the Open Shell Toolbar icon in the Secondary Side Bar opens the manager: command cards with run / edit / duplicate / enable / delete, live search, display-mode switch, JSON import/export |
 | **Command Palette** | `⌘⇧P` → type "Open Shell" | Add / run / display mode / import / export |
 | **Walkthrough** | Welcome page → Walkthroughs | Step-by-step getting-started guide |
 

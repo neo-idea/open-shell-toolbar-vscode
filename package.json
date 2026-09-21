@@ -2,7 +2,7 @@
   "name": "open-shell-toolbar",
   "displayName": "Open Shell Toolbar",
   "description": "Pin your frequently-used shell commands as status bar buttons (or a quick-pick popup) and run them in the integrated terminal with one click.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "neo-idea",
   "license": "MIT",
   "repository": {
@@ -42,22 +42,35 @@
             "id": "add",
             "title": "Add your first command",
             "description": "Create a command like `pnpm dev`. Give it a title, an emoji or codicon icon, and pick whether it runs in the integrated terminal. [Add Shell Command](command:openShell.addCommand)",
-            "media": { "markdown": "media/walkthrough/add.md" },
-            "completionEvents": ["onCommand:openShell.addCommand"]
+            "media": {
+              "markdown": "media/walkthrough/add.md"
+            },
+            "completionEvents": [
+              "onCommand:openShell.addCommand"
+            ]
           },
           {
             "id": "run",
             "title": "Run it from the status bar",
             "description": "Every enabled command becomes a button on the status bar (bottom left). Hover to preview the command, click to run it in the integrated terminal. You can also run one from the palette: [Run Command...](command:openShell.pickAndRun)",
-            "media": { "markdown": "media/walkthrough/run.md" },
-            "completionEvents": ["onCommand:openShell.runCommand", "onCommand:openShell.pickAndRun"]
+            "media": {
+              "markdown": "media/walkthrough/run.md"
+            },
+            "completionEvents": [
+              "onCommand:openShell.runCommand",
+              "onCommand:openShell.pickAndRun"
+            ]
           },
           {
             "id": "manage",
             "title": "Manage commands in the sidebar",
             "description": "The Open Shell Toolbar icon in the Activity Bar (left) lists all commands — click to run, right-click to edit, duplicate, disable or delete. Toggle between one-button-per-command (flat) and a single popup button: [Set Display Mode](command:openShell.setDisplayMode)",
-            "media": { "markdown": "media/walkthrough/manage.md" },
-            "completionEvents": ["onCommand:openShell.setDisplayMode"]
+            "media": {
+              "markdown": "media/walkthrough/manage.md"
+            },
+            "completionEvents": [
+              "onCommand:openShell.setDisplayMode"
+            ]
           }
         ]
       }
@@ -103,11 +116,6 @@
         "title": "Set Display Mode (Flat / Popup)"
       },
       {
-        "command": "openShell.refreshTree",
-        "title": "Refresh",
-        "icon": "$(refresh)"
-      },
-      {
         "command": "openShell.importConfig",
         "title": "Import Commands from JSON"
       },
@@ -117,67 +125,21 @@
       }
     ],
     "viewContainers": {
-      "activitybar": [
+      "auxiliarybar": [
         {
-          "id": "openShellToolbar",
+          "id": "openShellToolbarAux",
           "title": "Open Shell Toolbar",
           "icon": "media/activity-icon.svg"
         }
       ]
     },
     "views": {
-      "openShellToolbar": [
+      "openShellToolbarAux": [
         {
           "id": "openShellCommands",
+          "type": "webview",
           "name": "Shell Commands",
           "contextualTitle": "Open Shell Toolbar"
-        }
-      ]
-    },
-    "viewsWelcome": [
-      {
-        "view": "openShellCommands",
-        "contents": "No shell commands yet.\n[Add Command](command:openShell.addCommand)\nOr import from JSON: [Import](command:openShell.importConfig)"
-      }
-    ],
-    "menus": {
-      "view/title": [
-        {
-          "command": "openShell.addCommand",
-          "when": "view == openShellCommands",
-          "group": "navigation@1"
-        },
-        {
-          "command": "openShell.refreshTree",
-          "when": "view == openShellCommands",
-          "group": "navigation@2"
-        }
-      ],
-      "view/item/context": [
-        {
-          "command": "openShell.runCommand",
-          "when": "view == openShellCommands && viewItem == shellCommand",
-          "group": "inline@1"
-        },
-        {
-          "command": "openShell.editCommand",
-          "when": "view == openShellCommands && viewItem == shellCommand",
-          "group": "1_edit@1"
-        },
-        {
-          "command": "openShell.duplicateCommand",
-          "when": "view == openShellCommands && viewItem == shellCommand",
-          "group": "1_edit@2"
-        },
-        {
-          "command": "openShell.toggleEnabled",
-          "when": "view == openShellCommands && viewItem == shellCommand",
-          "group": "1_edit@3"
-        },
-        {
-          "command": "openShell.deleteCommand",
-          "when": "view == openShellCommands && viewItem == shellCommand",
-          "group": "2_delete@1"
         }
       ]
     }
