@@ -164,7 +164,9 @@ export class ShellCommandsPanel implements vscode.WebviewViewProvider {
     border-radius: 5px;
     background: var(--vscode-editorWidget-background, rgba(128,128,128,.08));
     border: 1px solid var(--vscode-widget-border, rgba(128,128,128,.2));
+    cursor: pointer;
   }
+  .card:hover { border-color: var(--vscode-focusBorder, rgba(128,128,128,.5)); }
   .card.disabled { opacity: .5; }
   .icon {
     flex: 0 0 26px; height: 26px;
@@ -181,7 +183,7 @@ export class ShellCommandsPanel implements vscode.WebviewViewProvider {
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .badges { margin-top: 2px; font-size: 10px; opacity: .8; }
-  .actions { display: flex; gap: 4px; align-items: center; }
+  .actions { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; justify-content: flex-end; }
   .switch { display: flex; align-items: center; gap: 4px; font-size: 11px; opacity: .8; cursor: pointer; }
   .empty {
     text-align: center; padding: 40px 10px; opacity: .8;
@@ -230,6 +232,21 @@ export class ShellCommandsPanel implements vscode.WebviewViewProvider {
   document.getElementById('export').addEventListener('click', () => vscode.postMessage({ type: 'export' }));
   document.getElementById('search').addEventListener('input', render);
 
+  // Event delegation: no inline onclick — ids from imported JSON are
+  // attacker-controlled, so they must never be interpolated into handlers.
+  // A click on a card runs it; a click on a [data-act] button wins first.
+  document.getElementById('list').addEventListener('click', (e) => {
+    const action = e.target.closest('[data-act]');
+    if (action) {
+      vscode.postMessage({ type: action.dataset.act, id: action.dataset.id });
+      return;
+    }
+    const card = e.target.closest('[data-run-id]');
+    if (card) {
+      vscode.postMessage({ type: 'run', id: card.dataset.runId });
+    }
+  });
+
   function escapeHtml(s) {
     return String(s ?? '')
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -255,31 +272,28 @@ export class ShellCommandsPanel implements vscode.WebviewViewProvider {
         <div class="empty">
           <div class="big">&#9000;</div>
           <div>\${q ? 'No commands match your search.' : 'No shell commands yet.'}</div>
-          \${q ? '' : '<div style="margin-top:10px"><button onclick="add()">+ Add Command</button></div>'}
+          \${q ? '' : '<div style="margin-top:10px"><button data-act="add">+ Add Command</button></div>'}
         </div>\`;
       return;
     }
 
     list.innerHTML = commands.map(c => \`
-      <div class="card \${c.enabled ? '' : 'disabled'}">
+      <div class="card \${c.enabled ? '' : 'disabled'}" data-run-id="\${escapeHtml(c.id)}" title="Click to run">
         <div class="icon" title="\${escapeHtml(c.icon || '')}">\${iconText(c.icon)}</div>
         <div class="meta">
           <div class="title">\${escapeHtml(c.title)}</div>
           <div class="cmd">$ \${escapeHtml(c.command)}</div>
-          <div class="badges">\${c.openInTerminal ? '&#128433; terminal' : '&#128172; notification'}\${c.enabled ? '' : ' &middot; disabled'}</div>
+          <div class="badges">\${c.openInTerminal ? '&#9000; terminal' : '&#128172; notification'}\${c.enabled ? '' : ' &middot; disabled'}</div>
         </div>
         <div class="actions">
-          <button class="small" title="Run now" onclick="act('run', '\${c.id}')">&#9654; Run</button>
-          <button class="small secondary" title="Edit" onclick="act('edit', '\${c.id}')">&#9998;</button>
-          <button class="small secondary" title="Duplicate" onclick="act('duplicate', '\${c.id}')">&#10697;</button>
-          <button class="small secondary" title="\${c.enabled ? 'Disable' : 'Enable'}" onclick="act('toggle', '\${c.id}')">\${c.enabled ? '&#9723;' : '&#9745;'}</button>
-          <button class="small secondary" title="Delete" onclick="act('delete', '\${c.id}')">&#128465;</button>
+          <button class="small" data-act="run" data-id="\${escapeHtml(c.id)}" title="Run now">&#9654; Run</button>
+          <button class="small secondary" data-act="edit" data-id="\${escapeHtml(c.id)}" title="Edit">&#9998;</button>
+          <button class="small secondary" data-act="duplicate" data-id="\${escapeHtml(c.id)}" title="Duplicate">&#10697;</button>
+          <button class="small secondary" data-act="toggle" data-id="\${escapeHtml(c.id)}" title="\${c.enabled ? 'Disable' : 'Enable'}">\${c.enabled ? '&#9723;' : '&#9745;'}</button>
+          <button class="small secondary" data-act="delete" data-id="\${escapeHtml(c.id)}" title="Delete">&#128465;</button>
         </div>
       </div>\`).join('');
   }
-
-  function act(type, id) { vscode.postMessage({ type, id }); }
-  function add() { vscode.postMessage({ type: 'add' }); }
 
   render();
 </script>

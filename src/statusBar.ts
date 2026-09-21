@@ -42,8 +42,12 @@ export class StatusBarManager implements vscode.Disposable {
             const item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 1000 - index);
             item.name = `Open Shell: ${cmd.title}`;
             item.text = `${iconOr(cmd.icon, '$(play)')} ${cmd.title}`;
+            // 4-backtick fence so commands containing ` render correctly.
             item.tooltip = new vscode.MarkdownString(
-                `\`\`\`bash\n${escapeMd(cmd.command)}\n\`\`\``);
+                "````\n" +
+                (cmd.workingDir ? `# in ${cmd.workingDir}\n` : '') +
+                cmd.command +
+                "\n````");
             item.command = {
                 title: `Run ${cmd.title}`,
                 command: 'openShell.runCommand',
@@ -66,6 +70,3 @@ function iconOr(icon: string | undefined, fallback: string): string {
     return icon && icon.trim().length > 0 ? icon.trim() : fallback;
 }
 
-function escapeMd(text: string): string {
-    return text.replace(/`/g, '\\`');
-}

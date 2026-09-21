@@ -4,7 +4,7 @@ Pin any shell command you run repeatedly — `pnpm dev`, `docker compose up`,
 Use the button below, or:
 
 - Command Palette (`⌘⇧P` / `Ctrl+Shift+P`) → **Open Shell: Add Command**
-- Sidebar → Open Shell Toolbar → **+** button
+- Management panel (right side) → **+ Add Command**
 
 Each command takes a title, the command line, an optional working directory,
 an emoji or [codicon](https://microsoft.github.io/vscode-codicons/dist/codicon.html)

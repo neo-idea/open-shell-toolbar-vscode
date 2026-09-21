@@ -1,9 +1,11 @@
-The **Open Shell Toolbar** icon in the Activity Bar (left edge) opens the
-command manager:
+The **Open Shell Toolbar** icon on the RIGHT edge of the window (Secondary
+Side Bar) opens the management panel:
 
-- **Click** a command → run it
-- **Right-click** → Edit, Duplicate, Enable/Disable, Delete
-- Top bar **+** → add a new command
+- **Click** a command card → run it
+- Card buttons → **Run**, **Edit**, **Duplicate**, **Enable/Disable**, **Delete**
+- Toolbar → **+ Add Command**, **Import** / **Export** JSON
+- Search filters commands live; the header selector switches the status bar
+  between one-button-per-command (flat) and a single popup button
 
-Commands are stored globally, survive restarts, and refresh live everywhere.
-Share them between machines via **Open Shell: Export/Import Commands (JSON)**.
+Commands are stored globally, survive restarts, and refresh everywhere
+instantly.

@@ -108,7 +108,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             }
             const normalized = incoming.map((c: Partial<ShellCommandConfig>, i: number) => {
                 const cmd = createDefaultCommand(c);
-                cmd.id = c.id ?? config.newId();
+                // ids end up in webview attributes — keep them to a safe charset
+                const rawId = typeof c.id === 'string' ? c.id.replace(/[^A-Za-z0-9_-]/g, '') : '';
+                cmd.id = rawId.length > 0 ? rawId : config.newId();
                 cmd.title = c.title ?? `Command ${i + 1}`;
                 cmd.command = c.command ?? '';
                 return cmd;
