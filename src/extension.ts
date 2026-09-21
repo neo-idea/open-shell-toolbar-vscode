@@ -11,6 +11,7 @@ const INTRO_KEY = 'openShellToolbar.introShown';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     const config = new ConfigService(context);
+    _test.config = config;
     const executor = new CommandExecutor();
     const statusBar = new StatusBarManager(config);
     const panel = new ShellCommandsPanel(config, executor);
@@ -34,7 +35,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const pickAndRun = vscode.commands.registerCommand('openShell.pickAndRun', async () => {
         const commands = config.getEnabledCommands();
         if (commands.length === 0) {
-            vscode.window.showInformationMessage('Open Shell: no commands configured yet.');
+            // The top-right launcher is always visible; with nothing to run,
+            // route the click straight into maintenance instead of a dead end.
+            panel.requestForm();
             return;
         }
         const picked = await vscode.window.showQuickPick(
@@ -167,7 +170,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     if (!context.globalState.get<boolean>(INTRO_KEY)) {
         await context.globalState.update(INTRO_KEY, true);
         const pick = await vscode.window.showInformationMessage(
-            'Open Shell Toolbar installed. Click the ⚙ gear at the bottom-right of the status bar to manage commands.',
+            'Open Shell Toolbar installed. Maintain commands in the manager panel (⚙ bottom-right) and run them from the ▶ button at the top-right of the editor.',
             'Open Manager',
             'Add Command',
             'Show Guide');
@@ -186,3 +189,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 export function deactivate(): void {
     // nothing — disposables live in context.subscriptions
 }
+
+/** Live instances from the last activate() call — integration-test access only. */
+export const _test = {
+    config: undefined as ConfigService | undefined,
+};

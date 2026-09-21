@@ -29,20 +29,19 @@ export class ShellCommandsPanel implements vscode.WebviewViewProvider {
         view.webview.options = { enableScripts: true };
         view.webview.html = this.html(view.webview);
         view.webview.onDidReceiveMessage(message => void this.handle(message));
-        this.push();
-        if (this.pendingForm) {
-            const pending = this.pendingForm;
-            this.pendingForm = undefined;
-            void view.webview.postMessage({ type: 'beginForm', ...pending });
-        }
+        // NOTE: no push() here — messages posted before the webview script
+        // loads are silently dropped. The webview announces itself with
+        // 'ready' and we (re)send state + any pending form then.
     }
 
     /** Opens the add/edit form; focuses the panel first if it is not open yet. */
     requestForm(command?: ShellCommandConfig): void {
+        // Stash always: if the webview script is not loaded yet, a direct
+        // postMessage would be lost — 'ready' flushes the stash instead.
+        this.pendingForm = command ? { id: command.id, command } : {};
         if (this.view?.visible) {
             void this.view.webview.postMessage({ type: 'beginForm', command });
         } else {
-            this.pendingForm = command ? { id: command.id, command } : {};
             void vscode.commands.executeCommand('openShellCommands.focus');
         }
     }
@@ -62,6 +61,18 @@ export class ShellCommandsPanel implements vscode.WebviewViewProvider {
 
     private async handle(message: PanelMessage): Promise<void> {
         switch (message.type) {
+            case 'ready':
+                // Webview script is up — now state (and a pending form, if
+                // any) will actually be received.
+                this.push();
+                if (this.pendingForm) {
+                    const pending = this.pendingForm;
+                    void this.view?.webview.postMessage({ type: 'beginForm', ...pending });
+                }
+                break;
+            case 'formShown':
+                this.pendingForm = undefined;
+                break;
             case 'add':
                 this.requestForm();
                 break;
@@ -328,6 +339,7 @@ export class ShellCommandsPanel implements vscode.WebviewViewProvider {
 
 <script nonce="\${nonce}">
   const vscode = acquireVsCodeApi();
+  vscode.postMessage({ type: 'ready' });
   let state = { commands: [], mode: 'flat' };
   let view = 'list';          // 'list' | 'form'
   let editingId = null;       // null = adding
@@ -337,6 +349,7 @@ export class ShellCommandsPanel implements vscode.WebviewViewProvider {
     const d = e.data;
     if (!d) { return; }
     if (d.type === 'beginForm') {
+      vscode.postMessage({ type: 'formShown' });
       editingId = (d.command && d.command.id) || null;
       document.getElementById('formTitle').textContent = editingId ? 'Edit Command' : 'Add Command';
       document.getElementById('f-title').value = d.command ? (d.command.title || '') : '';
@@ -495,6 +508,8 @@ interface FormFields {
 }
 
 type PanelMessage =
+    | { type: 'ready' }
+    | { type: 'formShown' }
     | { type: 'add' }
     | { type: 'run' | 'edit' | 'duplicate' | 'delete' | 'toggle'; id: string }
     | { type: 'save'; id?: string; fields: FormFields }

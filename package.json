@@ -2,7 +2,7 @@
   "name": "open-shell-toolbar",
   "displayName": "Open Shell Toolbar",
   "description": "Pin your frequently-used shell commands as status bar buttons (or a quick-pick popup) and run them in the integrated terminal with one click.",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "publisher": "neo-idea",
   "license": "MIT",
   "repository": {
@@ -52,7 +52,7 @@
           {
             "id": "run",
             "title": "Run it from the status bar",
-            "description": "Every enabled command becomes a button on the status bar (bottom left). Hover to preview the command, click to run it in the integrated terminal. You can also run one from the palette: [Run Command...](command:openShell.pickAndRun)",
+            "description": "Run what you maintained, from the top-right: the ▶ button in the editor's top-right corner lists every command you added in the panel. Commands also get status bar buttons (bottom left). [Run Command...](command:openShell.pickAndRun)",
             "media": {
               "markdown": "media/walkthrough/run.md"
             },
@@ -151,8 +151,29 @@
       "editor/title": [
         {
           "command": "openShell.pickAndRun",
-          "group": "navigation",
-          "when": "openShellToolbar.hasCommands"
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "openShell.runCommand",
+          "when": "false"
+        },
+        {
+          "command": "openShell.editCommand",
+          "when": "false"
+        },
+        {
+          "command": "openShell.duplicateCommand",
+          "when": "false"
+        },
+        {
+          "command": "openShell.deleteCommand",
+          "when": "false"
+        },
+        {
+          "command": "openShell.toggleEnabled",
+          "when": "false"
         }
       ]
     }
@@ -162,11 +183,14 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "test": "npm run compile && node --test out/test/*.test.js",
+    "test:integration": "npm run compile && node out/test/runVSCode.js",
     "package": "vsce package"
   },
   "devDependencies": {
+    "@types/mocha": "^10.0.10",
     "@types/node": "^20.14.0",
     "@types/vscode": "^1.80.0",
+    "@vscode/test-electron": "^3.1.0",
     "@vscode/vsce": "^3.1.0",
     "typescript": "^5.4.5"
   }

@@ -17,6 +17,9 @@ configuration.
 
 ## ✨ Features
 
+- **▶ Editor top-right launcher** — a `▶` terminal button in the top-right
+  corner of every editor opens a menu of everything you maintained in the
+  panel; always visible, empty state jumps straight into the add form
 - **Status bar buttons for shell commands** — every pinned command is a
   one-click button (flat mode, default)
 - **Popup mode** — a single status bar button that opens a quick-pick menu
@@ -59,12 +62,14 @@ After installing (or run **Help → Welcome → Walkthroughs** for the built-in
    | Icon | 🚀 or `$(play)` |
    | Terminal | Yes |
 
-3. A **▶ Dev Server** button is now on your status bar — click to run.
+3. A **▶ Dev Server** button is now on your status bar, and the **▶ launcher
+   at the top-right of the editor** lists it — click either to run.
 
 ## 📖 Where to find everything
 
 | Entry point | Where | What it does |
 |---|---|---|
+| **▶ Launcher** | Top-right of every editor | Quick-pick menu of all maintained commands; with none yet it opens the add form |
 | **Status bar** | Bottom-left of the window | Flat mode: one button per command; popup mode: one `$(terminal) Commands` button. No commands yet → `Shell +` button adds one |
 | **Management panel** | Right side — the Open Shell Toolbar icon in the Secondary Side Bar opens the manager: command cards with run / edit / duplicate / enable / delete, live search, display-mode switch, JSON import/export |
 | **Command Palette** | `⌘⇧P` → type "Open Shell" | Add / run / display mode / import / export |
@@ -74,9 +79,10 @@ After installing (or run **Help → Welcome → Walkthroughs** for the built-in
 
 ```bash
 npm install
-npm run compile   # TypeScript → out/
-npm test          # unit tests (node:test)
-npm run package   # produce .vsix via vsce
+npm run compile          # TypeScript → out/
+npm test                 # unit tests (node:test)
+npm run test:integration # end-to-end in a real VS Code instance
+npm run package          # produce .vsix via vsce
 ```
 
 Press `F5` in VSCode to launch an **Extension Development Host** with the

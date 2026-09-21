@@ -1,5 +1,8 @@
-Open the manager: click the **⚙ gear at the bottom-right of the status bar**
-(or `⌘⇧P` → **Open Shell: Open Manager**).
+Two places to run your commands:
 
-Each button on the status bar runs its command in the integrated terminal —
-one click, no typing. Buttons are ordered as configured in the manager.
+- **Top-right of the editor** — the ▶ terminal button (next to `⋯`) opens a
+  menu of everything you maintained in the panel. Pick one, hit Enter.
+- **Status bar (bottom left)** — in flat mode every enabled command gets its
+  own button.
+
+Both run the command in a reused integrated terminal — one click, no typing.
