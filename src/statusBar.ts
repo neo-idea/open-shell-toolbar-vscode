@@ -24,9 +24,15 @@ export class StatusBarManager implements vscode.Disposable {
         if (this.config.getDisplayMode() === 'popup' || commands.length === 0) {
             const item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 1000);
             item.name = 'Open Shell Toolbar';
-            item.text = `$(terminal) ${commands.length === 0 ? 'Shell' : 'Commands'}`;
-            item.tooltip = 'Open Shell Toolbar — pick a command to run';
-            item.command = commands.length === 0 ? 'openShell.addCommand' : 'openShell.pickAndRun';
+            if (commands.length === 0) {
+                item.text = '$(terminal) Shell +';
+                item.tooltip = 'Open Shell Toolbar — no commands yet. Click to add your first one.';
+                item.command = 'openShell.addCommand';
+            } else {
+                item.text = `$(terminal) Commands (${commands.length})`;
+                item.tooltip = 'Open Shell Toolbar — pick a command to run';
+                item.command = 'openShell.pickAndRun';
+            }
             item.show();
             this.items.push(item);
             return;

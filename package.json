@@ -2,7 +2,7 @@
   "name": "open-shell-toolbar",
   "displayName": "Open Shell Toolbar",
   "description": "Pin your frequently-used shell commands as status bar buttons (or a quick-pick popup) and run them in the integrated terminal with one click.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "neo-idea",
   "license": "MIT",
   "repository": {
@@ -17,6 +17,7 @@
     "Other",
     "Terminal"
   ],
+  "category": "Open Shell",
   "keywords": [
     "shell",
     "terminal",
@@ -31,10 +32,40 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "walkthroughs": [
+      {
+        "id": "openShell.gettingStarted",
+        "title": "Open Shell Toolbar — Get Started",
+        "description": "Pin your shell commands to the status bar and run them with one click.",
+        "steps": [
+          {
+            "id": "add",
+            "title": "Add your first command",
+            "description": "Create a command like `pnpm dev`. Give it a title, an emoji or codicon icon, and pick whether it runs in the integrated terminal. [Add Shell Command](command:openShell.addCommand)",
+            "media": { "markdown": "media/walkthrough/add.md" },
+            "completionEvents": ["onCommand:openShell.addCommand"]
+          },
+          {
+            "id": "run",
+            "title": "Run it from the status bar",
+            "description": "Every enabled command becomes a button on the status bar (bottom left). Hover to preview the command, click to run it in the integrated terminal. You can also run one from the palette: [Run Command...](command:openShell.pickAndRun)",
+            "media": { "markdown": "media/walkthrough/run.md" },
+            "completionEvents": ["onCommand:openShell.runCommand", "onCommand:openShell.pickAndRun"]
+          },
+          {
+            "id": "manage",
+            "title": "Manage commands in the sidebar",
+            "description": "The Open Shell Toolbar icon in the Activity Bar (left) lists all commands — click to run, right-click to edit, duplicate, disable or delete. Toggle between one-button-per-command (flat) and a single popup button: [Set Display Mode](command:openShell.setDisplayMode)",
+            "media": { "markdown": "media/walkthrough/manage.md" },
+            "completionEvents": ["onCommand:openShell.setDisplayMode"]
+          }
+        ]
+      }
+    ],
     "commands": [
       {
         "command": "openShell.addCommand",
-        "title": "Add Shell Command",
+        "title": "Add Command",
         "icon": "$(add)"
       },
       {
@@ -64,12 +95,12 @@
       },
       {
         "command": "openShell.pickAndRun",
-        "title": "Open Shell: Run Command...",
+        "title": "Run Command...",
         "icon": "$(terminal)"
       },
       {
         "command": "openShell.setDisplayMode",
-        "title": "Open Shell: Set Display Mode (Flat / Popup)"
+        "title": "Set Display Mode (Flat / Popup)"
       },
       {
         "command": "openShell.refreshTree",
@@ -78,15 +109,24 @@
       },
       {
         "command": "openShell.importConfig",
-        "title": "Open Shell: Import Commands from JSON"
+        "title": "Import Commands from JSON"
       },
       {
         "command": "openShell.exportConfig",
-        "title": "Open Shell: Export Commands to JSON"
+        "title": "Export Commands to JSON"
       }
     ],
+    "viewContainers": {
+      "activitybar": [
+        {
+          "id": "openShellToolbar",
+          "title": "Open Shell Toolbar",
+          "icon": "media/activity-icon.svg"
+        }
+      ]
+    },
     "views": {
-      "explorer": [
+      "openShellToolbar": [
         {
           "id": "openShellCommands",
           "name": "Shell Commands",
@@ -97,7 +137,7 @@
     "viewsWelcome": [
       {
         "view": "openShellCommands",
-        "contents": "No shell commands yet.\n[Add Shell Command](command:openShell.addCommand)\nTo learn more, read the [README](https://github.com/neo-idea/open-shell-toolbar-vscode#readme)."
+        "contents": "No shell commands yet.\n[Add Command](command:openShell.addCommand)\nOr import from JSON: [Import](command:openShell.importConfig)"
       }
     ],
     "menus": {

@@ -8,7 +8,9 @@ import { StatusBarManager } from './statusBar';
 import { ShellCommandsTreeProvider } from './tree';
 import { CommandWizard } from './wizard';
 
-export function activate(context: vscode.ExtensionContext): void {
+const INTRO_KEY = 'openShellToolbar.introShown';
+
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
     const config = new ConfigService(context);
     const executor = new CommandExecutor();
     const statusBar = new StatusBarManager(config);
@@ -153,6 +155,23 @@ export function activate(context: vscode.ExtensionContext): void {
     );
 
     statusBar.render();
+
+    // First-run guidance: the extension has no visible UI until a command
+    // exists, so tell the user exactly where to start.
+    if (!context.globalState.get<boolean>(INTRO_KEY)) {
+        await context.globalState.update(INTRO_KEY, true);
+        const pick = await vscode.window.showInformationMessage(
+            'Open Shell Toolbar: pin shell commands to the status bar for one-click runs.',
+            'Add Command',
+            'Show Guide');
+        if (pick === 'Add Command') {
+            void vscode.commands.executeCommand('openShell.addCommand');
+        } else if (pick === 'Show Guide') {
+            void vscode.commands.executeCommand(
+                'workbench.action.openWalkthrough',
+                'neo-idea.open-shell-toolbar#openShell.gettingStarted');
+        }
+    }
 }
 
 export function deactivate(): void {

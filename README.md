@@ -42,7 +42,10 @@ configuration.
 
 ## 🚀 Quick Start
 
-1. Command Palette (`⌘⇧P`) → **Open Shell: Add Shell Command**
+After installing (or run **Help → Welcome → Walkthroughs** for the built-in
+*Open Shell Toolbar — Get Started* guide):
+
+1. Command Palette (`⌘⇧P`) → **Open Shell: Add Command**
 2. Fill in:
 
    | Field | Example |
@@ -55,14 +58,14 @@ configuration.
 
 3. A **▶ Dev Server** button is now on your status bar — click to run.
 
-## 📖 Usage
+## 📖 Where to find everything
 
-| Surface | What it does |
-|---|---|
-| **Status bar** (flat) | One button per enabled command; hover shows the command |
-| **Status bar** (popup) | One `$(terminal) Commands` button → quick pick |
-| **Explorer → Shell Commands** | Manage: run, edit, duplicate, disable, delete |
-| **Command Palette** | `Open Shell: …` for add / run / import / export / display mode |
+| Entry point | Where | What it does |
+|---|---|---|
+| **Status bar** | Bottom-left of the window | Flat mode: one button per command; popup mode: one `$(terminal) Commands` button. No commands yet → `Shell +` button adds one |
+| **Activity Bar** | Left edge, terminal icon → *Shell Commands* | Manage: run, edit, duplicate, disable, delete |
+| **Command Palette** | `⌘⇧P` → type "Open Shell" | Add / run / display mode / import / export |
+| **Walkthrough** | Welcome page → Walkthroughs | Step-by-step getting-started guide |
 
 ## 🛠 Development
 
